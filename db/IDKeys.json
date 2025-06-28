@@ -1,0 +1,14 @@
+{
+    "hospitals" : {
+        "Bilkent Şehir Hastanesi" : "001",
+        "Ankara Üniversitesi Hastanesi" : "002",
+        "GATA" : "003"
+    },
+    "departments" : {
+        "Nöroloji" : "001",
+        "Kardiyoloji" : "002",
+        "Radyoloji" : "003",
+        "Kulak Burun Boğaz" : "004",
+        "Ortopedi" : "005"
+    }
+}
