@@ -1,12 +1,18 @@
 package com.edipciftci.nobetduzenleyici;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 
 public class Main {
     public static void main(String[] args) {
+
+        Random rand = new Random();
+        List<String> drTypes = Arrays.asList("Asistan", "Kıdemli", "Uzman");
 
         ArrayList<Doctor> doctors = new ArrayList<>();
         String hospitalName = "Bilkent Şehir Hastanesi";
@@ -795,9 +801,17 @@ public class Main {
         doctorList.add(doctor111);
 
         for (Map<String,String> doctor : doctorList) {
+            if (Integer.parseInt(doctor.get("seniorityLevel")) < 2005){
+                doctor.put("doctorType", drTypes.get(rand.nextInt(3)));
+            } else if (Integer.parseInt(doctor.get("seniorityLevel")) < 2018){
+                doctor.put("doctorType", drTypes.get(rand.nextInt(2)));
+            } else {
+                doctor.put("doctorType", "Asistan");
+            }
             Doctor dr = new Doctor(doctor.get("name"),
                                     hospitalName,
                                     doctor.get("department"),
+                                    doctor.get("doctorType"),
                                     doctor.get("mail"),
                                     doctor.get("seniorityLevel"),
                                     db);

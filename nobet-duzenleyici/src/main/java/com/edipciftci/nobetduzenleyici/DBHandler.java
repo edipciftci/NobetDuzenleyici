@@ -45,6 +45,7 @@ public class DBHandler {
                             "hospital TEXT," +
                             "email TEXT," +
                             "senior_level INTEGER," +
+                            "type STRING," +
                             "shift_days TEXT" +
                             ");";
                 Statement stmt = conn.createStatement();
@@ -57,10 +58,10 @@ public class DBHandler {
         }
     }
 
-    public void insertDoctorToSQL(String doctorID, String name, String department, String hospital, String mail, int senior_level){
+    public void insertDoctorToSQL(String doctorID, String name, String department, String doctorType, String hospital, String mail, int senior_level){
         String url = "jdbc:sqlite:" + this.dbPath;
         try (Connection conn = DriverManager.getConnection(url)){
-            String insertSql = "INSERT OR IGNORE INTO doctors (doctorID, name, department, hospital, email, senior_level, shift_days) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            String insertSql = "INSERT OR IGNORE INTO doctors (doctorID, name, department, hospital, email, senior_level, type, shift_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
                 pstmt.setString(1, doctorID);
@@ -69,7 +70,8 @@ public class DBHandler {
                 pstmt.setString(4, hospital);
                 pstmt.setString(5, mail);
                 pstmt.setInt(6, senior_level);
-                pstmt.setString(7, "0,0,0,0,0,0,0");
+                pstmt.setString(7, doctorType);
+                pstmt.setString(8, "0,0,0,0,0,0,0");
                 pstmt.executeUpdate();
 
                 System.out.println("Inserted Doctor: " + name);

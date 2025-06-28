@@ -1,7 +1,10 @@
 package com.edipciftci.nobetduzenleyici;
 
 import java.io.File;
+import java.time.Year;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,25 +14,24 @@ public class Doctor {
     private final String ID;
     private String mail;
     private String department;
+    private String doctorType;
     private int seniorityLvl;
-    private boolean senior;
     private Map<String, Integer> shiftDayMap;
+    private ArrayList<Shift> shifts;
     private final DBHandler dbHandler;
+    private int monthLoad = 0;
+    private int sinceLastShift = 0;
 
-    public Doctor(String name, String hospital, String department, String mail, String seniorityLvl, DBHandler dbHandler){
+    public Doctor(String name, String hospital, String department, String doctorType, String mail, String seniorityLvl, DBHandler dbHandler){
         this.name = name;
         this.ID = this.doctorIDCreate(hospital, department, name);
         this.department = department;
+        this.doctorType = doctorType;
         this.mail = mail;
         this.seniorityLvl = Integer.parseInt(seniorityLvl);
-        if (this.seniorityLvl <= 2005){
-            this.senior = true;
-        } else {
-            this.senior = false;
-        }
         this.dbHandler = dbHandler;
         
-        this.dbHandler.insertDoctorToSQL(this.ID, this.name, this.department, hospital, this.mail, this.seniorityLvl);
+        this.dbHandler.insertDoctorToSQL(this.ID, this.name, this.department, this.doctorType, hospital, this.mail, this.seniorityLvl);
     }
     
     public void setMail(String mail){
@@ -48,6 +50,14 @@ public class Doctor {
         return this.department;
     }
 
+    public void setDoctorType(String doctorType){
+        this.doctorType = doctorType;
+    }
+    
+    public String getDoctorType(){
+        return this.doctorType;
+    }
+
     public void setSeniorityLevel(int seniorityLvl){
         this.seniorityLvl = seniorityLvl;
     }
@@ -56,14 +66,6 @@ public class Doctor {
         return this.seniorityLvl;
     }
 
-    public void setIfSenior(boolean senior){
-        this.senior = senior;
-    }
-    
-    public boolean getIfSenior(){
-        return this.senior;
-    }
-    
     public void createShiftDayMap(){
         this.shiftDayMap.put("Pazartesi", 0);
         this.shiftDayMap.put("Salı", 0);
@@ -127,8 +129,39 @@ public class Doctor {
         return this.ID;
     }
 
-    public void calculateProbability(Shift shift){
-        // TODO: shifts this month var should be implemented
+    public Double getSeniorityAdjuster(){
+        int year = Year.now().getValue();
+        Double exp = (double) (1 - ((year - this.seniorityLvl) / year));
+        return exp;
+    }
+
+    public Double getLastShiftAdjuster(){
+        if (this.sinceLastShift <= 4){
+            return 0.0;
+        }
+        return (double) (this.sinceLastShift / 4);
+    }
+
+    public void increaseSinceLastShift(){
+        this.sinceLastShift++;
+    }
+
+    public void newShift(Shift shift){
+        this.monthLoad++;
+        
+    }
+
+    public Double calculateProbability(Shift shift){
+
+        double result;
+        double monthLoadFactor = Math.pow(this.monthLoad, 2);
+        double dayWeight = Math.pow((1-(this.getDayWeight(shift.getWeekday()))), 2);
+        double seniorityAdjuster = Math.pow(this.getSeniorityAdjuster(), 2);
+        double lastShiftAdjuster = Math.pow(this.getLastShiftAdjuster(), 0.5);
+        
+        result = monthLoadFactor * dayWeight * seniorityAdjuster * lastShiftAdjuster * ((Math.random() * 0.3) + 0.85);
+
+        return result;
     }
 
 }
