@@ -3,8 +3,8 @@ package com.edipciftci.nobetduzenleyici;
 import java.io.File;
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +16,7 @@ public class Doctor {
     private String department;
     private String doctorType;
     private int seniorityLvl;
-    private Map<String, Integer> shiftDayMap;
+    private Map<String, Integer> shiftDayMap = new HashMap<>();
     private ArrayList<Shift> shifts;
     private final DBHandler dbHandler;
     private int monthLoad = 0;
@@ -29,8 +29,10 @@ public class Doctor {
         this.doctorType = doctorType;
         this.mail = mail;
         this.seniorityLvl = Integer.parseInt(seniorityLvl);
+        this.shifts = new ArrayList<>();
+        this.createShiftDayMap();
+
         this.dbHandler = dbHandler;
-        
         this.dbHandler.insertDoctorToSQL(this.ID, this.name, this.department, this.doctorType, hospital, this.mail, this.seniorityLvl);
     }
     
@@ -66,7 +68,8 @@ public class Doctor {
         return this.seniorityLvl;
     }
 
-    public void createShiftDayMap(){
+    @SuppressWarnings("FinalPrivateMethod")
+    private final void createShiftDayMap(){
         this.shiftDayMap.put("Pazartesi", 0);
         this.shiftDayMap.put("Salı", 0);
         this.shiftDayMap.put("Çarşamba", 0);
@@ -148,7 +151,11 @@ public class Doctor {
 
     public void newShift(Shift shift){
         this.monthLoad++;
-        
+        this.shifts.add(shift);
+
+        this.shiftDayMap.put(shift.getWeekday(), this.shiftDayMap.get(shift.getWeekday()) + 1);
+
+        this.sinceLastShift = 0;
     }
 
     public Double calculateProbability(Shift shift){
