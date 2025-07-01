@@ -16,4 +16,16 @@ public class Hospital {
         this.months.add(newMonth);
     }
 
+    public ArrayList<Month> getMonths(){
+        return this.months;
+    }
+
+    public void setDoctors(ArrayList<Doctor> doctors){
+        this.doctors = doctors;
+    }
+
+    public ArrayList<Doctor> getDoctors(){
+        return this.doctors;
+    }
+
 }

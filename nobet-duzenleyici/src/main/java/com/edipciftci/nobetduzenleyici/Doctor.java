@@ -20,7 +20,8 @@ public class Doctor {
     private ArrayList<Shift> shifts;
     private final DBHandler dbHandler;
     private int monthLoad = 0;
-    private int sinceLastShift = 0;
+    private int sinceLastShift = 21;
+    private Double currentShiftPoint;
 
     public Doctor(String name, String hospital, String department, String doctorType, String mail, String seniorityLvl, DBHandler dbHandler){
         this.name = name;
@@ -70,13 +71,13 @@ public class Doctor {
 
     @SuppressWarnings("FinalPrivateMethod")
     private final void createShiftDayMap(){
-        this.shiftDayMap.put("Pazartesi", 0);
-        this.shiftDayMap.put("Salı", 0);
-        this.shiftDayMap.put("Çarşamba", 0);
-        this.shiftDayMap.put("Perşembe", 0);
-        this.shiftDayMap.put("Cuma", 0);
-        this.shiftDayMap.put("Cumartesi", 0);
-        this.shiftDayMap.put("Pazar", 0);
+        this.shiftDayMap.put("MONDAY", 0);
+        this.shiftDayMap.put("TUESDAY", 0);
+        this.shiftDayMap.put("WEDNESDAY", 0);
+        this.shiftDayMap.put("THURSDAY", 0);
+        this.shiftDayMap.put("FRIDAY", 0);
+        this.shiftDayMap.put("SATURDAY", 0);
+        this.shiftDayMap.put("SUNDAY", 0);
     }
 
     public void setShiftDayMap(Map<String, Integer> shiftDayMap){
@@ -87,12 +88,20 @@ public class Doctor {
         return this.shiftDayMap;
     }
 
+    public void setShiftPoint(Shift shift){
+        this.currentShiftPoint = this.calculateProbability(shift);
+    }
+    
+    public Double getShiftPoint(){
+        return this.currentShiftPoint;
+    }
+
     public float getDayWeight(String currDay){
         int sum = 0;
         for (int dayValue : this.shiftDayMap.values()) {
             sum += dayValue;
         }
-
+        if (sum == 0){sum = 1;}
         return (this.shiftDayMap.get(currDay) / sum);
     }
 
@@ -139,10 +148,10 @@ public class Doctor {
     }
 
     public Double getLastShiftAdjuster(){
-        if (this.sinceLastShift <= 4){
+        if (this.sinceLastShift <= 3){
             return 0.0;
         }
-        return (double) (this.sinceLastShift / 4);
+        return (double) (this.sinceLastShift / 3);
     }
 
     public void increaseSinceLastShift(){
@@ -161,7 +170,7 @@ public class Doctor {
     public Double calculateProbability(Shift shift){
 
         double result;
-        double monthLoadFactor = Math.pow(this.monthLoad, 2);
+        double monthLoadFactor = Math.pow(1-this.monthLoad, 2);
         double dayWeight = Math.pow((1-(this.getDayWeight(shift.getWeekday()))), 2);
         double seniorityAdjuster = Math.pow(this.getSeniorityAdjuster(), 2);
         double lastShiftAdjuster = Math.pow(this.getLastShiftAdjuster(), 0.5);

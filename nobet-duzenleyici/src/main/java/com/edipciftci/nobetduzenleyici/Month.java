@@ -11,10 +11,10 @@ import java.util.Map;
 
 public class Month {
 
-    private final Map<Integer,Shift> shiftMap = new HashMap<>();
+    private final Map<Integer,ArrayList<Shift>> shiftMap = new HashMap<>();
 
-    private String monthName;
-    private String firstDay;
+    private final String monthName;
+    private final String firstDay;
     
     public Month(String month){
         this.monthName = month;
@@ -39,7 +39,7 @@ public class Month {
     }
 
     public void newShift(int day, Shift shift){
-        this.shiftMap.put(day, shift);
+        this.shiftMap.get(day).add(shift);
     }
 
     private String setFirstDay(){
@@ -60,8 +60,56 @@ public class Month {
         return this.firstDay;
     }
 
+    public int getDayAsInt(String day){
+        return switch (day.toLowerCase()) {
+            case "monday" -> 1;
+            case "tuesday" -> 2;
+            case "wednesday" -> 3;
+            case "thursday" -> 4;
+            case "friday" -> 5;
+            case "saturday" -> 6;
+            default -> 7;
+        };
+    }
+
+    public String getDayAsString(int day){
+        return switch (day) {
+            case 1 -> "MONDAY";
+            case 2 -> "TUESDAY";
+            case 3 -> "WEDNESDAY";
+            case 4 -> "THURSDAY";
+            case 5 -> "FRIDAY";
+            case 6 -> "SATURDAY";
+            default -> "SUNDAY";
+        };
+    }
+
     public void prepareShifts(ArrayList<Doctor> doctors){
-        
+        int currDay = this.getDayAsInt(this.firstDay);
+        for (int i = 1; i < this.shiftMap.size()+1; i++) {
+            ArrayList<Shift> shiftsOfDay = new ArrayList<>();
+            Shift shift = new Shift(this, i, this.getDayAsString(currDay), "Genel");
+            shift.setSize(10);
+            for (Doctor doctor : doctors) {
+                doctor.setShiftPoint(shift);
+                if (shift.isFull()){
+                    if (doctor.getShiftPoint() > shift.getWorstDoctor().getShiftPoint()){
+                        shift.removeWorstDoctor();
+                        shift.addDoctor(doctor);
+                    }
+                } else {
+                    shift.addDoctor(doctor);
+                    shift.decideWorstDoctor();
+                }
+                doctor.increaseSinceLastShift();
+            }
+            for (Doctor doctor : shift.getDoctors()) {
+                doctor.newShift(shift);
+            }
+            shiftsOfDay.add(shift);
+            this.shiftMap.put(i, shiftsOfDay);
+            currDay = ((currDay) % 7) + 1;
+        }
     }
 
 }

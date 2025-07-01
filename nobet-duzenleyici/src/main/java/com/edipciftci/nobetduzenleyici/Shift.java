@@ -7,14 +7,14 @@ public class Shift {
     private Month month;
     private int dayNum, size;
     private String weekday, shiftArea; // Shift area = {Acil, Yoğun Bakım, Servis}
-    private boolean full;
+    private Doctor worstDoctor;
 
     public Shift(Month month, int dayNum, String weekday, String shiftArea){
         this.month = month;
         this.dayNum = dayNum;
         this.weekday = weekday;
-        this.full = false;
         this.shiftArea = shiftArea;
+        this.worstDoctor = null;
     }
 
     public void setMonth(Month month){
@@ -57,18 +57,48 @@ public class Shift {
         return this.shiftArea;
     }
 
-    public void setFull(boolean full){
-        this.full = full;
+    public void setWorstDoctor(Doctor worstDoctor){
+        this.worstDoctor = worstDoctor;
     }
     
-    public boolean getFull(){
-        return this.full;
+    public Doctor getWorstDoctor(){
+        return this.worstDoctor;
+    }
+
+    public void decideWorstDoctor(){
+        if (this.worstDoctor == null){
+            this.worstDoctor = this.doctors.getFirst();
+        }
+        for (Doctor doctor : this.doctors) {
+            if (doctor.getShiftPoint() < this.worstDoctor.getShiftPoint()){
+                this.worstDoctor = doctor;
+            }
+        }
+    }
+
+    public ArrayList<Doctor> getDoctors(){
+        return this.doctors;
+    }
+
+    public boolean isFull(){
+        return (this.doctors.size() == this.size);
     }
 
     public void addDoctor(Doctor doctor){
         this.doctors.add(doctor);
-        if (this.size == this.doctors.size()){
-            this.full = true;
+    }
+
+    public void removeDoctor(Doctor doctor){
+        this.doctors.remove(doctor);
+    }
+
+    public void removeWorstDoctor(){
+        this.removeDoctor(this.worstDoctor);
+        this.worstDoctor = this.doctors.getFirst();
+        for (Doctor dr : this.doctors) {
+            if (dr.getShiftPoint() < this.worstDoctor.getShiftPoint()) {
+                this.worstDoctor = dr;
+            }
         }
     }
 
