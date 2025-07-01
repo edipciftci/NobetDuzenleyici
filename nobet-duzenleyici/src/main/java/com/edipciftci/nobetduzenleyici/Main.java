@@ -818,7 +818,7 @@ public class Main {
             doctors.add(dr);
         }
 
-        Hospital hosp = new Hospital();
+        Hospital hosp = new Hospital(db);
 
         hosp.setDoctors(doctors);
 

@@ -6,13 +6,14 @@ public class Hospital {
 
     private ArrayList<Doctor> doctors = new ArrayList<>();
     private ArrayList<Month> months = new ArrayList<>();
+    private DBHandler db;
 
-    public Hospital(){
-
+    public Hospital(DBHandler db){
+        this.db = db;
     }
 
     public void newMonth(String month){
-        Month newMonth = new Month(month);
+        Month newMonth = new Month(month, this.db);
         this.months.add(newMonth);
     }
 

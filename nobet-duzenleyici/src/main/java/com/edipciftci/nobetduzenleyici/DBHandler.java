@@ -81,4 +81,63 @@ public class DBHandler {
             System.out.println(e.getMessage());
         }
     }
+
+    public void createMonthDB(Month mnt){
+        String url = "jdbc:sqlite:" + this.dbPath;
+        try (Connection conn = DriverManager.getConnection(url)){
+            if (conn != null){
+                System.out.println("Connected to SQLite.");
+
+                String sql = "CREATE TABLE IF NOT EXISTS " + mnt.getMonthName() + " (" +
+                            "Day INTEGER," + 
+                            "DOW TEXT, " +
+                            "Area TEXT ";
+                for (int i = 1; i < 16; i++) {
+                    sql += ",DR" + Integer.toString(i) + " TEXT";
+                }
+                sql += ");";
+                Statement stmt = conn.createStatement();
+                stmt.execute(sql);
+
+                System.out.println(mnt.getMonthName() + " table is ready.");
+            }
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void addShift(Month mnt, Shift shift){
+        String url = "jdbc:sqlite:" + this.dbPath;
+        try (Connection conn = DriverManager.getConnection(url)){
+            String insertSql = "INSERT OR IGNORE INTO " + mnt.getMonthName() +
+            " (Day, DOW, Area, ";
+
+            for (int i = 1; i < shift.getSize(); i++) {
+                insertSql += "DR" + Integer.toString(i) + ", ";
+            }
+            insertSql += "DR" + Integer.toString(shift.getSize()) + ") VALUES (?, ?, ?, ";
+            for (int i = 1; i < shift.getSize(); i++) {
+                insertSql += "?, ";
+            }
+            insertSql += "?)";
+
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+                int j = 4;
+                pstmt.setInt(1, shift.getDayNum());
+                pstmt.setString(2, shift.getWeekday());
+                pstmt.setString(3, shift.getShiftArea());
+                for (Doctor dr : shift.getDoctors()) {
+                    pstmt.setString(j, dr.getName());
+                    j++;
+                }
+                pstmt.executeUpdate();
+            }
+
+            System.out.println("Day " + Integer.toString(shift.getDayNum()) + " of " + mnt.getMonthName() + " ----- Shifts are ready.");
+
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
 }

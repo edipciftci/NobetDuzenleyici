@@ -36,6 +36,10 @@ public class Doctor {
         this.dbHandler = dbHandler;
         this.dbHandler.insertDoctorToSQL(this.ID, this.name, this.department, this.doctorType, hospital, this.mail, this.seniorityLvl);
     }
+
+    public String getName(){
+        return this.name;
+    }
     
     public void setMail(String mail){
         this.mail = mail;
@@ -169,8 +173,12 @@ public class Doctor {
 
     public Double calculateProbability(Shift shift){
 
+        if ((this.shifts != null) || (shift.getMonth() != this.shifts.getLast().getMonth())){
+            this.monthLoad = 0;
+        }
+
         double result;
-        double monthLoadFactor = Math.pow(1-this.monthLoad, 2);
+        double monthLoadFactor = Math.pow(1-(this.monthLoad / shift.getDayNum()), 2);
         double dayWeight = Math.pow((1-(this.getDayWeight(shift.getWeekday()))), 2);
         double seniorityAdjuster = Math.pow(this.getSeniorityAdjuster(), 2);
         double lastShiftAdjuster = Math.pow(this.getLastShiftAdjuster(), 0.5);

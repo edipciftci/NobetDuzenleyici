@@ -15,11 +15,17 @@ public class Month {
 
     private final String monthName;
     private final String firstDay;
+    private DBHandler db;
     
-    public Month(String month){
+    public Month(String month, DBHandler db){
         this.monthName = month;
         this.createShiftMap(this.getNumOfDays());
         this.firstDay = this.setFirstDay();
+        this.db = db;
+    }
+
+    public String getMonthName(){
+        return this.monthName;
     }
 
     @SuppressWarnings("FinalPrivateMethod")
@@ -85,6 +91,7 @@ public class Month {
     }
 
     public void prepareShifts(ArrayList<Doctor> doctors){
+        this.db.createMonthDB(this);
         int currDay = this.getDayAsInt(this.firstDay);
         for (int i = 1; i < this.shiftMap.size()+1; i++) {
             ArrayList<Shift> shiftsOfDay = new ArrayList<>();
@@ -108,6 +115,7 @@ public class Month {
             }
             shiftsOfDay.add(shift);
             this.shiftMap.put(i, shiftsOfDay);
+            this.db.addShift(this, shift);
             currDay = ((currDay) % 7) + 1;
         }
     }
