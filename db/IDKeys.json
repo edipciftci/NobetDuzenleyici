@@ -1,8 +1,15 @@
 {
     "hospitals" : {
         "Bilkent Şehir Hastanesi" : "001",
-        "Ankara Üniversitesi Hastanesi" : "002",
-        "GATA" : "003"
+        "Ankara Eğitim ve Araştırma Hastanesi" : "002",
+        "Ankara Etlik Şehir Hastanesi" : "003",
+        "Güven Hastanesi" : "004"
+    },
+    "shortNames" : {
+        "Bilkent Şehir Hastanesi" : "Blk",
+        "Ankara Eğitim ve Araştırma Hastanesi" : "Ank",
+        "Ankara Etlik Şehir Hastanesi" : "Etl",
+        "Güven Hastanesi" : "Gvn"
     },
     "departments" : {
         "Nöroloji" : "001",

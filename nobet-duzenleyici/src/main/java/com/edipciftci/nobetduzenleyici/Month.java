@@ -16,6 +16,7 @@ public class Month {
     private final String monthName;
     private final String firstDay;
     private DBHandler db;
+    private int year;
     
     public Month(String month, DBHandler db){
         this.monthName = month;
@@ -26,6 +27,10 @@ public class Month {
 
     public String getMonthName(){
         return this.monthName;
+    }
+
+    public int getYear(){
+        return this.year;
     }
 
     @SuppressWarnings("FinalPrivateMethod")
@@ -52,6 +57,7 @@ public class Month {
         java.time.Month m = java.time.Month.valueOf(monthName.toUpperCase(Locale.ENGLISH));
         ZoneId tz = ZoneId.of("Europe/Istanbul");
         int year = Year.now(tz).getValue();
+        this.year = year;
         YearMonth ym = YearMonth.of(year, m);
         ZonedDateTime zdt = ym.atDay(1).atStartOfDay(tz);
 
@@ -90,12 +96,13 @@ public class Month {
         };
     }
 
-    public void prepareShifts(ArrayList<Doctor> doctors){
-        this.db.createMonthDB(this);
+    public void prepareShifts(ArrayList<Doctor> doctors, Hospital hosp){
+        this.db.createMonthDB(this, hosp);
+        ArrayList<Shift> shifts = new ArrayList();
         int currDay = this.getDayAsInt(this.firstDay);
         for (int i = 1; i < this.shiftMap.size()+1; i++) {
             ArrayList<Shift> shiftsOfDay = new ArrayList<>();
-            Shift shift = new Shift(this, i, this.getDayAsString(currDay), "Genel");
+            Shift shift = new Shift(hosp, this, i, this.getDayAsString(currDay), "Genel");
             shift.setSize(10);
             for (Doctor doctor : doctors) {
                 doctor.setShiftPoint(shift);
@@ -115,9 +122,10 @@ public class Month {
             }
             shiftsOfDay.add(shift);
             this.shiftMap.put(i, shiftsOfDay);
-            this.db.addShift(this, shift);
+            shifts.add(shift);
             currDay = ((currDay) % 7) + 1;
         }
+        this.db.addShifts(this, shifts, hosp);
     }
 
 }

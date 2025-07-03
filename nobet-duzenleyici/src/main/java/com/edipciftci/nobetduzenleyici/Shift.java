@@ -4,12 +4,14 @@ import java.util.ArrayList;
 
 public class Shift {
     private ArrayList<Doctor> doctors = new ArrayList<>();
+    private Hospital hosp;
     private Month month;
     private int dayNum, size;
     private String weekday, shiftArea; // Shift area = {Acil, Yoğun Bakım, Servis}
     private Doctor worstDoctor;
 
-    public Shift(Month month, int dayNum, String weekday, String shiftArea){
+    public Shift(Hospital hosp, Month month, int dayNum, String weekday, String shiftArea){
+        this.hosp = hosp;
         this.month = month;
         this.dayNum = dayNum;
         this.weekday = weekday;
@@ -78,6 +80,10 @@ public class Shift {
 
     public ArrayList<Doctor> getDoctors(){
         return this.doctors;
+    }
+
+    public Hospital geHospital(){
+        return this.hosp;
     }
 
     public boolean isFull(){

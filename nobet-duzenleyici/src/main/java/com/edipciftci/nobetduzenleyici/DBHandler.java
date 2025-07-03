@@ -116,14 +116,17 @@ public class DBHandler {
         }
     }
 
-    public void createMonthDB(Month mnt){
+    public void createMonthDB(Month mnt, Hospital hosp){
         String url = "jdbc:sqlite:" + this.dbPath;
         try (Connection conn = DriverManager.getConnection(url)){
             if (conn != null){
                 System.out.println("Connected to SQLite.");
 
-                String sql = "CREATE TABLE IF NOT EXISTS " + mnt.getMonthName() + " (" +
-                            "Day INTEGER," + 
+                String sql = "CREATE TABLE IF NOT EXISTS " +
+                            hosp.getShortName() + "_" +
+                            mnt.getMonthName() +
+                            mnt.getYear() +
+                            " (Day INTEGER," + 
                             "DOW TEXT, " +
                             "Area TEXT ";
                 for (int i = 1; i < 16; i++) {
@@ -143,8 +146,10 @@ public class DBHandler {
     public void addShift(Month mnt, Shift shift){
         String url = "jdbc:sqlite:" + this.dbPath;
         try (Connection conn = DriverManager.getConnection(url)){
-            String insertSql = "INSERT OR IGNORE INTO " + mnt.getMonthName() +
-            " (Day, DOW, Area, ";
+            String insertSql = "INSERT OR IGNORE INTO " + shift.geHospital().getShortName() + "_" +
+                            mnt.getMonthName() +
+                            mnt.getYear() +
+                            " (Day, DOW, Area, ";
 
             for (int i = 1; i < shift.getSize(); i++) {
                 insertSql += "DR" + Integer.toString(i) + ", ";
@@ -172,6 +177,61 @@ public class DBHandler {
         } catch (SQLException e){
             System.out.println(e.getMessage());
         }
+    }
+
+    public void addShifts(Month mnt, ArrayList<Shift> shifts, Hospital hosp){
+        String url = "jdbc:sqlite:" + this.dbPath;
+        int shiftSize = 15;
+        String insertSql = "INSERT OR IGNORE INTO " + hosp.getShortName() + "_" +
+                            mnt.getMonthName() +
+                            mnt.getYear() +
+                            " (Day, DOW, Area, ";
+
+            for (int i = 1; i < shiftSize; i++) {
+                insertSql += "DR" + Integer.toString(i) + ", ";
+            }
+            insertSql += "DR" + Integer.toString(shiftSize) + ") VALUES (?, ?, ?, ";
+            for (int i = 1; i < shiftSize; i++) {
+                insertSql += "?, ";
+            }
+            insertSql += "?)";
+
+        try (Connection conn = DriverManager.getConnection(url)){
+            
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+
+                shifts.stream()
+                    .forEach(
+                        shift -> {
+                            try {
+                                int j = 4;
+                                pstmt.setInt(1, shift.getDayNum());
+                                pstmt.setString(2, shift.getWeekday());
+                                pstmt.setString(3, shift.getShiftArea());
+                                for (Doctor dr : shift.getDoctors()) {
+                                    pstmt.setString(j, dr.getName());
+                                    j++;
+                                }
+                                pstmt.executeUpdate();
+                            } catch (SQLException e) {
+                                System.out.println(e.getMessage());
+                            }
+                        }
+                    );
+            }
+            conn.commit();
+
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public ArrayList<Doctor> getDoctorsFromSQL(){
+        ArrayList<Doctor> doctors = null;
+
+        return doctors;
     }
 
 }

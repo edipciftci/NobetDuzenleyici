@@ -19,8 +19,15 @@ import java.util.stream.Collectors;
 public class Main {
     public static void main(String[] args) throws IOException {
 
+        String[] hospitalNames = {
+                                    "Bilkent Şehir Hastanesi",
+                                    "Ankara Eğitim ve Araştırma Hastanesi",
+                                    "Ankara Etlik Şehir Hastanesi",
+                                    "Güven Hastanesi"
+                                };
 
         ArrayList<Doctor> doctors = new ArrayList<>();
+        ArrayList<Hospital> hospitals = new ArrayList<>();
 
         DBHandler db = new DBHandler();
 
@@ -30,19 +37,25 @@ public class Main {
 
         doctors = addDoctors(doctorList, db, doctors);
 
-        Hospital hosp = new Hospital(db);
+        for (String hospital : hospitalNames) {
+                Hospital hosp = new Hospital(db, hospital);
+                hosp.setDoctors((ArrayList<Doctor>) doctors.stream().filter(dr -> dr.getHospital().equals(hospital)).collect(Collectors.toList()));
+                hospitals.add(hosp);
+            }
 
-        hosp.setDoctors(doctors);
-
-        hosp.newMonth("July");
-        hosp.newMonth("August");
-        for (Month mnt : hosp.getMonths()) {
-            long start = System.nanoTime();
-            mnt.prepareShifts(hosp.getDoctors());
-            long end = System.nanoTime();
-            long durNS = end - start;
-            double durMS = durNS / 1_000_000.0;
-            System.out.println("It took " + durMS + " ms to prepare " + mnt.getMonthName());
+        System.out.println("Here");
+        
+        for (Hospital hosp : hospitals){
+            hosp.newMonth("July");
+            hosp.newMonth("August");
+            for (Month mnt : hosp.getMonths()) {
+                long start = System.nanoTime();
+                mnt.prepareShifts(hosp.getDoctors(), hosp);
+                long end = System.nanoTime();
+                long durNS = end - start;
+                double durMS = durNS / 1_000_000.0;
+                System.out.println("It took " + durMS + " ms to prepare " + mnt.getMonthName());
+            }
         }
 
     }
