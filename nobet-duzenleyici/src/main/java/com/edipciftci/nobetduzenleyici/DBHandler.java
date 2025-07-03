@@ -7,6 +7,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 public class DBHandler {
     private static final String DB_FILENAME = "hospital.db";
@@ -73,10 +74,43 @@ public class DBHandler {
                 pstmt.setString(7, doctorType);
                 pstmt.setString(8, "0,0,0,0,0,0,0");
                 pstmt.executeUpdate();
-
-                System.out.println("Inserted Doctor: " + name);
             }
 
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void insertDoctorsToSQL(ArrayList<Doctor> doctors){
+        String url = "jdbc:sqlite:" + this.dbPath;
+        String insertSql = "INSERT OR IGNORE INTO doctors (doctorID, name, department,"+
+                            " hospital, email, senior_level, type, shift_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(url)){
+            conn.setAutoCommit(false);
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSql)){
+
+                doctors.stream()
+                        .forEach(
+                            doctor -> {
+                                try{
+                                    pstmt.setString(1, doctor.getDoctorID());
+                                    pstmt.setString(2, doctor.getName());
+                                    pstmt.setString(3, doctor.getDepartment());
+                                    pstmt.setString(4, doctor.getHospital());
+                                    pstmt.setString(5, doctor.getMail());
+                                    pstmt.setInt(6, doctor.getSeniorityLevel());
+                                    pstmt.setString(7, doctor.getDoctorType());
+                                    pstmt.setString(8, "0,0,0,0,0,0,0");
+                                    pstmt.executeUpdate();
+                                } catch (SQLException e){
+                                    System.out.println(e.getMessage());
+                                }
+                            }
+                        );
+            }
+            conn.commit();
+            
         } catch (SQLException e){
             System.out.println(e.getMessage());
         }

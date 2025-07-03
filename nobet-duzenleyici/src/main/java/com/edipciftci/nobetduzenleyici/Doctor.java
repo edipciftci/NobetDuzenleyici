@@ -15,6 +15,7 @@ public class Doctor {
     private String mail;
     private String department;
     private String doctorType;
+    private String hospital;
     private int seniorityLvl;
     private Map<String, Integer> shiftDayMap = new HashMap<>();
     private ArrayList<Shift> shifts;
@@ -23,22 +24,29 @@ public class Doctor {
     private int sinceLastShift = 21;
     private Double currentShiftPoint;
 
-    public Doctor(String name, String hospital, String department, String doctorType, String mail, String seniorityLvl, DBHandler dbHandler){
+    public Doctor(String name, String hospital, String department, String doctorType, String mail, String seniorityLvl, DBHandler dbHandler, boolean singular){
         this.name = name;
         this.ID = this.doctorIDCreate(hospital, department, name);
         this.department = department;
         this.doctorType = doctorType;
         this.mail = mail;
+        this.hospital = hospital;
         this.seniorityLvl = Integer.parseInt(seniorityLvl);
         this.shifts = new ArrayList<>();
         this.createShiftDayMap();
 
         this.dbHandler = dbHandler;
-        this.dbHandler.insertDoctorToSQL(this.ID, this.name, this.department, this.doctorType, hospital, this.mail, this.seniorityLvl);
+        if (singular){
+            this.dbHandler.insertDoctorToSQL(this.ID, this.name, this.department, this.doctorType, hospital, this.mail, this.seniorityLvl);
+        }
     }
 
     public String getName(){
         return this.name;
+    }
+
+    public String getHospital(){
+        return this.hospital;
     }
     
     public void setMail(String mail){
