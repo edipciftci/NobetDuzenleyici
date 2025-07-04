@@ -25,6 +25,13 @@ public class Main {
                                     "Ankara Etlik Şehir Hastanesi",
                                     "Güven Hastanesi"
                                 };
+        
+        ArrayList<String> departments = new ArrayList<>();
+        departments.add("Nöroloji");
+        departments.add("Kardiyoloji");
+        departments.add("Kulak Burun Boğaz");
+        departments.add("Radyoloji");
+        departments.add("Ortopedi");
 
         ArrayList<Doctor> doctors = new ArrayList<>();
         ArrayList<Hospital> hospitals = new ArrayList<>();
@@ -39,6 +46,7 @@ public class Main {
 
         for (String hospital : hospitalNames) {
                 Hospital hosp = new Hospital(db, hospital);
+                hosp.setDepartments(departments);
                 hosp.setDoctors((ArrayList<Doctor>) doctors.stream().filter(dr -> dr.getHospital().equals(hospital)).collect(Collectors.toList()));
                 hospitals.add(hosp);
             }

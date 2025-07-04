@@ -5,18 +5,22 @@ import java.util.ArrayList;
 public class Shift {
     private ArrayList<Doctor> doctors = new ArrayList<>();
     private Hospital hosp;
+    private String department;
+    private String shortDep;
     private Month month;
     private int dayNum, size;
     private String weekday, shiftArea; // Shift area = {Acil, Yoğun Bakım, Servis}
     private Doctor worstDoctor;
 
-    public Shift(Hospital hosp, Month month, int dayNum, String weekday, String shiftArea){
+    public Shift(Hospital hosp, Month month, int dayNum, String weekday, String shiftArea, String department){
         this.hosp = hosp;
         this.month = month;
         this.dayNum = dayNum;
         this.weekday = weekday;
         this.shiftArea = shiftArea;
         this.worstDoctor = null;
+        this.department = department;
+        this.shortDep = hosp.getShortDep(department);
     }
 
     public void setMonth(Month month){
@@ -82,7 +86,7 @@ public class Shift {
         return this.doctors;
     }
 
-    public Hospital geHospital(){
+    public Hospital getHospital(){
         return this.hosp;
     }
 
@@ -115,6 +119,14 @@ public class Shift {
             }
         }
         return false;
+    }
+
+    public String getDepartment(){
+        return this.department;
+    }
+
+    public String getShortDep(){
+        return this.shortDep;
     }
 
 }

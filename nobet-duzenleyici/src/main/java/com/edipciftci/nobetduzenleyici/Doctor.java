@@ -14,6 +14,7 @@ public class Doctor {
     private final String ID;
     private String mail;
     private String department;
+    private String shortDep;
     private String doctorType;
     private String hospital;
     private int seniorityLvl;
@@ -63,6 +64,10 @@ public class Doctor {
     
     public String getDepartment(){
         return this.department;
+    }
+
+    public String getShortDep(){
+        return this.shortDep;
     }
 
     public void setDoctorType(String doctorType){
@@ -131,6 +136,7 @@ public class Doctor {
                                                                 );
             hospitalID = idData.get("hospitals").get(hospital);
             departmentID = idData.get("departments").get(department);
+            this.shortDep = idData.get("shortDeps").get(department);
 
         } catch (Exception e){
             System.out.println(e.getMessage());

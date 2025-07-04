@@ -98,34 +98,39 @@ public class Month {
 
     public void prepareShifts(ArrayList<Doctor> doctors, Hospital hosp){
         this.db.createMonthDB(this, hosp);
-        ArrayList<Shift> shifts = new ArrayList();
+        ArrayList<Shift> shifts = new ArrayList<>();
         int currDay = this.getDayAsInt(this.firstDay);
-        for (int i = 1; i < this.shiftMap.size()+1; i++) {
-            ArrayList<Shift> shiftsOfDay = new ArrayList<>();
-            Shift shift = new Shift(hosp, this, i, this.getDayAsString(currDay), "Genel");
-            shift.setSize(10);
-            for (Doctor doctor : doctors) {
-                doctor.setShiftPoint(shift);
-                if (shift.isFull()){
-                    if (doctor.getShiftPoint() > shift.getWorstDoctor().getShiftPoint()){
-                        shift.removeWorstDoctor();
-                        shift.addDoctor(doctor);
+        for (String department : hosp.getDepartments()) {
+            for (int i = 1; i < this.shiftMap.size()+1; i++) {
+                ArrayList<Shift> shiftsOfDay = new ArrayList<>();
+                Shift shift = new Shift(hosp, this, i, this.getDayAsString(currDay), "Genel", department);
+                shift.setSize(10);
+                for (Doctor doctor : doctors) {
+                    if (!doctor.getDepartment().equals(department)){
+                        continue;
                     }
-                } else {
-                    shift.addDoctor(doctor);
-                    shift.decideWorstDoctor();
+                    doctor.setShiftPoint(shift);
+                    if (shift.isFull()){
+                        if (doctor.getShiftPoint() > shift.getWorstDoctor().getShiftPoint()){
+                            shift.removeWorstDoctor();
+                            shift.addDoctor(doctor);
+                        }
+                    } else {
+                        shift.addDoctor(doctor);
+                        shift.decideWorstDoctor();
+                    }
+                    doctor.increaseSinceLastShift();
                 }
-                doctor.increaseSinceLastShift();
+                for (Doctor doctor : shift.getDoctors()) {
+                    doctor.newShift(shift);
+                }
+                shiftsOfDay.add(shift);
+                this.shiftMap.put(i, shiftsOfDay);
+                shifts.add(shift);
+                currDay = ((currDay) % 7) + 1;
             }
-            for (Doctor doctor : shift.getDoctors()) {
-                doctor.newShift(shift);
-            }
-            shiftsOfDay.add(shift);
-            this.shiftMap.put(i, shiftsOfDay);
-            shifts.add(shift);
-            currDay = ((currDay) % 7) + 1;
+            this.db.addShifts(this, shifts, hosp, department);
         }
-        this.db.addShifts(this, shifts, hosp);
     }
 
 }

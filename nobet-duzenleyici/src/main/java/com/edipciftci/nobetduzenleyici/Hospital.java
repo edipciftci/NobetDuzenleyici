@@ -2,6 +2,7 @@ package com.edipciftci.nobetduzenleyici;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -14,6 +15,8 @@ public class Hospital {
     private DBHandler db;
     private String name;
     private String shortName;
+    private ArrayList<String> departments = new ArrayList<>();
+    private Map<String, String> shortDeps = new HashMap<>();
 
     public Hospital(DBHandler db, String name){
         this.db = db;
@@ -60,6 +63,36 @@ public class Hospital {
 
     public String getShortName(){
         return this.shortName;
+    }
+
+    public void setDepartments(ArrayList<String> departments){
+        this.departments = departments;
+        this.setShortDeps();
+    }
+    
+    public ArrayList<String> getDepartments(){
+        return this.departments;
+    }
+
+    public void setShortDeps(){
+        try{
+            ObjectMapper mapper = new ObjectMapper();
+            String fileName = System.getProperty("user.dir") + File.separator + "db" + File.separator + "IDKeys.json";
+            Map<String, Map<String, String>> idData = mapper.readValue(
+                                                                new File(fileName),
+                                                                new TypeReference<Map<String, Map<String, String>>>() {}
+                                                                );
+            for (String department : this.departments) {
+                this.shortDeps.put(department, idData.get("shortDeps").get(department));
+            }
+
+        } catch (Exception e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public String getShortDep(String department){
+        return this.shortDeps.get(department);
     }
 
 }

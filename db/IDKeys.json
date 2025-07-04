@@ -17,5 +17,12 @@
         "Radyoloji" : "003",
         "Kulak Burun Boğaz" : "004",
         "Ortopedi" : "005"
+    },
+    "shortDeps" : {
+        "Nöroloji" : "NÖR",
+        "Kardiyoloji" : "KAR",
+        "Radyoloji" : "RAD",
+        "Kulak Burun Boğaz" : "KBB",
+        "Ortopedi" : "ORT"
     }
 }

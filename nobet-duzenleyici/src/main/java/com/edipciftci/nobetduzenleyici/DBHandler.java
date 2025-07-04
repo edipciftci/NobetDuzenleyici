@@ -118,35 +118,38 @@ public class DBHandler {
 
     public void createMonthDB(Month mnt, Hospital hosp){
         String url = "jdbc:sqlite:" + this.dbPath;
-        try (Connection conn = DriverManager.getConnection(url)){
-            if (conn != null){
-                System.out.println("Connected to SQLite.");
+        for (String department : hosp.getDepartments()) {
+            try (Connection conn = DriverManager.getConnection(url)){
+                if (conn != null){
+                    System.out.println("Connected to SQLite.");
 
-                String sql = "CREATE TABLE IF NOT EXISTS " +
-                            hosp.getShortName() + "_" +
-                            mnt.getMonthName() +
-                            mnt.getYear() +
-                            " (Day INTEGER," + 
-                            "DOW TEXT, " +
-                            "Area TEXT ";
-                for (int i = 1; i < 16; i++) {
-                    sql += ",DR" + Integer.toString(i) + " TEXT";
+                    String sql = "CREATE TABLE IF NOT EXISTS " +
+                                hosp.getShortName() +
+                                hosp.getShortDep(department) + "_" +
+                                mnt.getMonthName() +
+                                mnt.getYear() +
+                                " (Day INTEGER," + 
+                                "DOW TEXT, " +
+                                "Area TEXT ";
+                    for (int i = 1; i < 16; i++) {
+                        sql += ",DR" + Integer.toString(i) + " TEXT";
+                    }
+                    sql += ");";
+                    Statement stmt = conn.createStatement();
+                    stmt.execute(sql);
+
+                    System.out.println(mnt.getMonthName() + " table is ready.");
                 }
-                sql += ");";
-                Statement stmt = conn.createStatement();
-                stmt.execute(sql);
-
-                System.out.println(mnt.getMonthName() + " table is ready.");
+            } catch (SQLException e){
+                System.out.println(e.getMessage());
             }
-        } catch (SQLException e){
-            System.out.println(e.getMessage());
         }
     }
 
     public void addShift(Month mnt, Shift shift){
         String url = "jdbc:sqlite:" + this.dbPath;
         try (Connection conn = DriverManager.getConnection(url)){
-            String insertSql = "INSERT OR IGNORE INTO " + shift.geHospital().getShortName() + "_" +
+            String insertSql = "INSERT OR IGNORE INTO " + shift.getHospital().getShortName() + shift.getShortDep() + "_" +
                             mnt.getMonthName() +
                             mnt.getYear() +
                             " (Day, DOW, Area, ";
@@ -172,17 +175,18 @@ public class DBHandler {
                 pstmt.executeUpdate();
             }
 
-            System.out.println("Day " + Integer.toString(shift.getDayNum()) + " of " + mnt.getMonthName() + " ----- Shifts are ready.");
-
         } catch (SQLException e){
             System.out.println(e.getMessage());
         }
     }
 
-    public void addShifts(Month mnt, ArrayList<Shift> shifts, Hospital hosp){
+    public void addShifts(Month mnt, ArrayList<Shift> shifts, Hospital hosp, String department){
         String url = "jdbc:sqlite:" + this.dbPath;
-        int shiftSize = 15;
-        String insertSql = "INSERT OR IGNORE INTO " + hosp.getShortName() + "_" +
+        int shiftSize = shifts.stream()
+                                .mapToInt(Shift::getSize)
+                                .max().orElse(15);
+
+        String insertSql = "INSERT OR IGNORE INTO " + hosp.getShortName() + hosp.getShortDep(department) + "_" +
                             mnt.getMonthName() +
                             mnt.getYear() +
                             " (Day, DOW, Area, ";
@@ -230,7 +234,7 @@ public class DBHandler {
 
     public ArrayList<Doctor> getDoctorsFromSQL(){
         ArrayList<Doctor> doctors = null;
-
+            // TODO
         return doctors;
     }
 
