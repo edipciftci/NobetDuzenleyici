@@ -50,19 +50,17 @@ public class Main {
                 hosp.setDoctors((ArrayList<Doctor>) doctors.stream().filter(dr -> dr.getHospital().equals(hospital)).collect(Collectors.toList()));
                 hospitals.add(hosp);
             }
-
-        System.out.println("Here");
         
         for (Hospital hosp : hospitals){
             hosp.newMonth("July");
-            hosp.newMonth("August");
+            // hosp.newMonth("August");
             for (Month mnt : hosp.getMonths()) {
                 long start = System.nanoTime();
                 mnt.prepareShifts(hosp.getDoctors(), hosp);
                 long end = System.nanoTime();
                 long durNS = end - start;
                 double durMS = durNS / 1_000_000.0;
-                System.out.println("It took " + durMS + " ms to prepare " + mnt.getMonthName());
+                System.out.println("It took " + durMS + " ms to prepare " + mnt.getMonthName() + " for " + hosp.getName());
             }
         }
 

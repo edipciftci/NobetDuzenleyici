@@ -115,11 +115,14 @@ public class Doctor {
 
     public float getDayWeight(String currDay){
         int sum = 0;
+        float res;
         for (int dayValue : this.shiftDayMap.values()) {
             sum += dayValue;
         }
-        if (sum == 0){sum = 1;}
-        return (this.shiftDayMap.get(currDay) / sum);
+        if (sum == 0){return (float) 0.01;}
+        res = ((float)(this.shiftDayMap.get(currDay)) / (float)sum);
+        if (res > 0.2) {return (float) 0.99;}
+        return res;
     }
 
     private String doctorIDCreate(String hospital, String department, String name){
@@ -195,7 +198,7 @@ public class Doctor {
         double monthLoadFactor = Math.pow(1-(this.monthLoad / shift.getDayNum()), 2);
         double dayWeight = Math.pow((1-(this.getDayWeight(shift.getWeekday()))), 2);
         double seniorityAdjuster = Math.pow(this.getSeniorityAdjuster(), 2);
-        double lastShiftAdjuster = Math.pow(this.getLastShiftAdjuster(), 0.5);
+        double lastShiftAdjuster = Math.pow(this.getLastShiftAdjuster(), 2);
         
         result = monthLoadFactor * dayWeight * seniorityAdjuster * lastShiftAdjuster * ((Math.random() * 0.3) + 0.85);
 

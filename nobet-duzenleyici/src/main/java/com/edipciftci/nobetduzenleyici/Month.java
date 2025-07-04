@@ -98,9 +98,9 @@ public class Month {
 
     public void prepareShifts(ArrayList<Doctor> doctors, Hospital hosp){
         this.db.createMonthDB(this, hosp);
-        ArrayList<Shift> shifts = new ArrayList<>();
         int currDay = this.getDayAsInt(this.firstDay);
         for (String department : hosp.getDepartments()) {
+            ArrayList<Shift> shifts = new ArrayList<>();
             for (int i = 1; i < this.shiftMap.size()+1; i++) {
                 ArrayList<Shift> shiftsOfDay = new ArrayList<>();
                 Shift shift = new Shift(hosp, this, i, this.getDayAsString(currDay), "Genel", department);

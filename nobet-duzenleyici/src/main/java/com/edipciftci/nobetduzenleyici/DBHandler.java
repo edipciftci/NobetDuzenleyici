@@ -121,8 +121,6 @@ public class DBHandler {
         for (String department : hosp.getDepartments()) {
             try (Connection conn = DriverManager.getConnection(url)){
                 if (conn != null){
-                    System.out.println("Connected to SQLite.");
-
                     String sql = "CREATE TABLE IF NOT EXISTS " +
                                 hosp.getShortName() +
                                 hosp.getShortDep(department) + "_" +
@@ -137,8 +135,6 @@ public class DBHandler {
                     sql += ");";
                     Statement stmt = conn.createStatement();
                     stmt.execute(sql);
-
-                    System.out.println(mnt.getMonthName() + " table is ready.");
                 }
             } catch (SQLException e){
                 System.out.println(e.getMessage());
