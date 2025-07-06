@@ -40,9 +40,12 @@ public class Main {
 
         db.createDB();
 
-        ArrayList<Map<String, String>> doctorList = createDoctors();
+        // ArrayList<Map<String, String>> doctorList = createDoctors();
 
-        doctors = addDoctors(doctorList, db, doctors);
+        // doctors = addDoctors(doctorList, db, doctors);
+
+        db.cleanSQL();
+        doctors = db.getDoctorsFromSQL();
 
         for (String hospital : hospitalNames) {
                 Hospital hosp = new Hospital(db, hospital);

@@ -25,7 +25,7 @@ public class Doctor {
     private int sinceLastShift = 21;
     private Double currentShiftPoint;
 
-    public Doctor(String name, String hospital, String department, String doctorType, String mail, String seniorityLvl, DBHandler dbHandler, boolean singular){
+    public Doctor(String name, String hospital, String department, String doctorType, String mail, String seniorityLvl, DBHandler dbHandler, boolean addToSQL){
         this.name = name;
         this.ID = this.doctorIDCreate(hospital, department, name);
         this.department = department;
@@ -37,7 +37,7 @@ public class Doctor {
         this.createShiftDayMap();
 
         this.dbHandler = dbHandler;
-        if (singular){
+        if (addToSQL){
             this.dbHandler.insertDoctorToSQL(this.ID, this.name, this.department, this.doctorType, hospital, this.mail, this.seniorityLvl);
         }
     }
@@ -95,6 +95,19 @@ public class Doctor {
         this.shiftDayMap.put("FRIDAY", 0);
         this.shiftDayMap.put("SATURDAY", 0);
         this.shiftDayMap.put("SUNDAY", 0);
+    }
+
+    public void addToShiftDayMap(int dayOfWeek, int dayValue){
+        switch (dayOfWeek) {
+            case 0 -> this.shiftDayMap.put("MONDAY", dayValue);
+            case 1 -> this.shiftDayMap.put("TUESDAY", dayValue);
+            case 2 -> this.shiftDayMap.put("WEDNESDAY", dayValue);
+            case 3 -> this.shiftDayMap.put("THURSDAY", dayValue);
+            case 4 -> this.shiftDayMap.put("FRIDAY", dayValue);
+            case 5 -> this.shiftDayMap.put("SATURDAY", dayValue);
+            case 6 -> this.shiftDayMap.put("SUNDAY", dayValue);
+            default -> throw new AssertionError();
+        }
     }
 
     public void setShiftDayMap(Map<String, Integer> shiftDayMap){

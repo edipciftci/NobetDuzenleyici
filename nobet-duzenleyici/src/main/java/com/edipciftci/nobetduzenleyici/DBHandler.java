@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 
 public class DBHandler {
     private static final String DB_FILENAME = "hospital.db";
@@ -229,9 +231,75 @@ public class DBHandler {
     }
 
     public ArrayList<Doctor> getDoctorsFromSQL(){
-        ArrayList<Doctor> doctors = null;
-            // TODO
+        ArrayList<Doctor> doctors = new ArrayList<>();
+        String url = "jdbc:sqlite:" + this.dbPath;
+
+        String sqlString = "SELECT name, department, hospital, email, senior_level, type, shift_days FROM doctors";
+
+        try(Connection conn = DriverManager.getConnection(url);
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sqlString)){
+
+                while (rs.next()){
+                    String  name     = rs.getString("name");
+                    String  dept     = rs.getString("department");
+                    String  hosp     = rs.getString("hospital");
+                    String  email    = rs.getString("email");
+                    int     level    = rs.getInt("senior_level");
+                    String  type     = rs.getString("type");
+                    String[] shiftDayMap   = rs.getString("shift_days").split(",");
+
+                    Doctor dr = new Doctor(name, hosp, dept, type, email, Integer.toString(level), this, false);
+                    for (int i = 0; i < shiftDayMap.length; i++) {
+                        dr.addToShiftDayMap(i, Integer.parseInt(shiftDayMap[i]));
+                    }
+                    doctors.add(dr);
+                }
+
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+        }
+
         return doctors;
+    }
+
+    public void cleanSQL(){
+        String url = "jdbc:sqlite:" + this.dbPath;
+        List<String> toDrop = new ArrayList<>();
+
+        try (Connection conn = DriverManager.getConnection(url)) {
+            conn.setAutoCommit(false);
+
+            // 1) Get all table names
+            String fetchSql = 
+                "SELECT name FROM sqlite_master " +
+                "WHERE type = 'table' " +
+                "  AND name NOT LIKE 'sqlite_%';";  // skip SQLite internal tables
+
+            try (Statement stmt = conn.createStatement();
+                ResultSet rs   = stmt.executeQuery(fetchSql)) {
+
+                while (rs.next()) {
+                    String table = rs.getString("name");
+                    if (!(table.equals("doctors"))) {
+                        toDrop.add(table);
+                    }
+                }
+            }
+
+            // 2) Drop each unwanted table
+            try (Statement dropStmt = conn.createStatement()) {
+                for (String table : toDrop) {
+                    String sql = "DROP TABLE IF EXISTS " + table + ";";
+                    dropStmt.executeUpdate(sql);
+                    System.out.println("Dropped table: " + table);
+                }
+            }
+
+            conn.commit();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
 }
