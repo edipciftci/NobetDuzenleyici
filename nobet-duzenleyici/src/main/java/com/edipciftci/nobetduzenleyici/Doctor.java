@@ -16,14 +16,15 @@ public class Doctor {
     private String department;
     private String shortDep;
     private String doctorType;
-    private String hospital;
+    private final String hospital;
     private int seniorityLvl;
     private Map<String, Integer> shiftDayMap = new HashMap<>();
-    private ArrayList<Shift> shifts;
+    private final ArrayList<Shift> shifts;
     private final DBHandler dbHandler;
     private int monthLoad = 0;
     private int sinceLastShift = 21;
     private Double currentShiftPoint;
+    private int max;
 
     public Doctor(String name, String hospital, String department, String doctorType, String mail, String seniorityLvl, DBHandler dbHandler, boolean addToSQL){
         this.name = name;
@@ -39,6 +40,12 @@ public class Doctor {
         this.dbHandler = dbHandler;
         if (addToSQL){
             this.dbHandler.insertDoctorToSQL(this.ID, this.name, this.department, this.doctorType, hospital, this.mail, this.seniorityLvl);
+        }
+
+        switch (doctorType){
+            case "Uzman" -> this.max = 2;
+            case "Kıdemli" -> this.max = 4;
+            default -> this.max = 6;
         }
     }
 
@@ -203,8 +210,12 @@ public class Doctor {
 
     public Double calculateProbability(Shift shift){
 
-        if ((this.shifts != null) || (shift.getMonth() != this.shifts.getLast().getMonth())){
-            this.monthLoad = 0;
+        // if ((this.shifts != null) || (shift.getMonth() != this.shifts.getLast().getMonth())){
+        //     this.monthLoad = 0;
+        // }
+
+        if (this.max == this.monthLoad){
+            return 0.0;
         }
 
         double result;
@@ -213,7 +224,7 @@ public class Doctor {
         double seniorityAdjuster = Math.pow(this.getSeniorityAdjuster(), 2);
         double lastShiftAdjuster = Math.pow(this.getLastShiftAdjuster(), 2);
         
-        result = monthLoadFactor * dayWeight * seniorityAdjuster * lastShiftAdjuster * ((Math.random() * 0.3) + 0.85);
+        result = monthLoadFactor * dayWeight * seniorityAdjuster * lastShiftAdjuster * ((Math.random() * 0.6) + 0.7);
 
         return result;
     }

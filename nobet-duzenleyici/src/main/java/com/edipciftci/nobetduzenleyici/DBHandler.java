@@ -9,7 +9,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DBHandler {
     private static final String DB_FILENAME = "hospital.db";
@@ -31,7 +35,8 @@ public class DBHandler {
             System.err.println(e.getMessage());
         }
 
-        createDoctorTable();
+        this.createDoctorTable();
+        this.createShiftTable();
     }
 
     public void createDoctorTable(){
@@ -167,7 +172,7 @@ public class DBHandler {
                 pstmt.setString(2, shift.getWeekday());
                 pstmt.setString(3, shift.getShiftArea());
                 for (Doctor dr : shift.getDoctors()) {
-                    pstmt.setString(j, dr.getName());
+                    pstmt.setString(j, dr.getName() + " (" + dr.getDoctorType() + ")");
                     j++;
                 }
                 pstmt.executeUpdate();
@@ -213,7 +218,7 @@ public class DBHandler {
                                 pstmt.setString(2, shift.getWeekday());
                                 pstmt.setString(3, shift.getShiftArea());
                                 for (Doctor dr : shift.getDoctors()) {
-                                    pstmt.setString(j, dr.getName());
+                                    pstmt.setString(j, dr.getName() + " (" + dr.getDoctorType() + ")");
                                     j++;
                                 }
                                 pstmt.executeUpdate();
@@ -265,6 +270,10 @@ public class DBHandler {
 
     public void cleanSQL(){
         String url = "jdbc:sqlite:" + this.dbPath;
+        String[] save = {
+            "doctors", "Shift_Table"
+        };
+        Set<String> savedTables = new HashSet<>(Arrays.asList(save));
         List<String> toDrop = new ArrayList<>();
 
         try (Connection conn = DriverManager.getConnection(url)) {
@@ -281,7 +290,7 @@ public class DBHandler {
 
                 while (rs.next()) {
                     String table = rs.getString("name");
-                    if (!(table.equals("doctors"))) {
+                    if (!(savedTables.contains(table))) {
                         toDrop.add(table);
                     }
                 }
@@ -300,6 +309,118 @@ public class DBHandler {
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+    }
+
+    public void cleanShiftTable(){
+        String url = "jdbc:sqlite:" + this.dbPath;
+
+        try (Connection conn = DriverManager.getConnection(url)) {
+            // 2) Drop each unwanted table
+            try (Statement dropStmt = conn.createStatement()) {
+
+                String sql = "DROP TABLE IF EXISTS Shift_Table;";
+                dropStmt.executeUpdate(sql);
+
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        this.createShiftTable();
+    }
+
+    public void createShiftTable(){
+        String url = "jdbc:sqlite:" + this.dbPath;
+        
+        try (Connection conn = DriverManager.getConnection(url)){
+            if (conn != null){
+                String sql = "CREATE TABLE IF NOT EXISTS " +
+                            "Shift_Table (Day INTEGER, Month TEXT, Hospital TEXT, Department TEXT, Area TEXT, Uzman INTEGER, Kıdemli INTEGER, Asistan INTEGER);";
+                Statement stmt = conn.createStatement();
+                stmt.execute(sql);
+            }
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        
+    }
+
+    public void addShiftSettings(int day, String month, String hosp, String department, String area, Map<String, Integer> drNumbers){
+        String url = "jdbc:sqlite:" + this.dbPath;
+
+        try (Connection conn = DriverManager.getConnection(url)){
+            if (conn != null){
+                String insertSql = "INSERT OR IGNORE INTO Shift_Table " +
+                                    "(Day, Month, Hospital, Department, Area, Uzman, Kıdemli, Asistan)" +
+                                    "VALUES " +
+                                    "(?, ?, ?, ?, ?, ?, ?, ?)";
+
+                try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+                    pstmt.setInt(1, day);
+                    pstmt.setString(2, month);
+                    pstmt.setString(3, hosp);
+                    pstmt.setString(4, department);
+                    pstmt.setString(5, area);
+                    pstmt.setInt(6, drNumbers.get("Uzman"));
+                    pstmt.setInt(7, drNumbers.get("Kıdemli"));
+                    pstmt.setInt(8, drNumbers.get("Asistan"));
+                    pstmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void addMultipleShiftSettings(String month, String hosp, Map<String, Map<String, Integer>> shifts){
+        String department, area;
+        int day;
+        Map<String, Integer> drNumbers;
+        String url = "jdbc:sqlite:" + this.dbPath;
+
+        String insertSql = "INSERT OR IGNORE INTO Shift_Table " +
+                                "(Day, Month, Hospital, Department, Area, Uzman, Kıdemli, Asistan)" +
+                                "VALUES " +
+                                "(?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(url)){
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+                for (String shiftKey : shifts.keySet()) {
+                    department = shiftKey.split("_")[0];
+                    area = shiftKey.split("_")[1];
+                    day = Integer.parseInt(shiftKey.split("_")[2]);
+
+                    drNumbers = shifts.get(shiftKey);
+                
+                    pstmt.setInt(1, day);
+                    pstmt.setString(2, month);
+                    pstmt.setString(3, hosp);
+                    pstmt.setString(4, department);
+                    pstmt.setString(5, area);
+                    pstmt.setInt(6, drNumbers.get("Uzman"));
+                    pstmt.setInt(7, drNumbers.get("Kıdemli"));
+                    pstmt.setInt(8, drNumbers.get("Asistan"));
+                    pstmt.executeUpdate();
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public ArrayList<Shift> getShiftsFromSQL(ArrayList<Hospital> hospitals, Month month){
+
+        ArrayList<Shift> shifts = new ArrayList<>();
+        Hospital hosp;
+        String url = "jdbc:sqlite:" + this.dbPath;
+
+        String sqlString = "SELECT Day, Month, Hospital, Department, Area, Uzman, Kıdemli, Asistan FROM Shift_Table";
+
+        return shifts;
+
     }
 
 }

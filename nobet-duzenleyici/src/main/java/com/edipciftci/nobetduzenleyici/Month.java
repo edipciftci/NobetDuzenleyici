@@ -41,16 +41,12 @@ public class Month {
     }
 
     @SuppressWarnings("FinalPrivateMethod")
-    private final Integer getNumOfDays(){
+    public final Integer getNumOfDays(){
         return switch (this.monthName) {
             case "January", "March", "May", "July", "August", "October", "December" -> 31;
             case "February" -> 28;
             default -> 30;
         };
-    }
-
-    public void newShift(int day, Shift shift){
-        this.shiftMap.get(day).add(shift);
     }
 
     private String setFirstDay(){
@@ -110,6 +106,10 @@ public class Month {
                         continue;
                     }
                     doctor.setShiftPoint(shift);
+                    if (doctor.getShiftPoint() == 0){
+                        doctor.increaseSinceLastShift();
+                        continue;
+                    }
                     if (shift.isFull()){
                         if (doctor.getShiftPoint() > shift.getWorstDoctor().getShiftPoint()){
                             shift.removeWorstDoctor();

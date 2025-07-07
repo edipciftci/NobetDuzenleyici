@@ -45,6 +45,7 @@ public class Main {
         // doctors = addDoctors(doctorList, db, doctors);
 
         db.cleanSQL();
+        db.cleanShiftTable();
         doctors = db.getDoctorsFromSQL();
 
         for (String hospital : hospitalNames) {
@@ -53,10 +54,13 @@ public class Main {
                 hosp.setDoctors((ArrayList<Doctor>) doctors.stream().filter(dr -> dr.getHospital().equals(hospital)).collect(Collectors.toList()));
                 hospitals.add(hosp);
             }
-        
+
         for (Hospital hosp : hospitals){
             hosp.newMonth("July");
-            // hosp.newMonth("August");
+            hosp.newMonth("August");
+            for (Month month : hosp.getMonths()) {
+                shiftSettingsSimulator(db, hosp, month);
+            }
             for (Month mnt : hosp.getMonths()) {
                 long start = System.nanoTime();
                 mnt.prepareShifts(hosp.getDoctors(), hosp);
@@ -200,7 +204,7 @@ public class Main {
         firstNames.addAll(female);
 
         // Prepare a pool of unique full names
-        Random rand = new Random(42);
+        Random rand = new Random(System.nanoTime() ^ Runtime.getRuntime().freeMemory());
         Set<String> usedNames = doctorList.stream()
             .map(m -> m.get("name"))
             .collect(Collectors.toCollection(HashSet::new));
@@ -208,8 +212,8 @@ public class Main {
         int totalNeeded = 4 * 5 * 80; // hospitals * departments * max per group
         while (namePool.size() < totalNeeded) {
             String full = firstNames.get(rand.nextInt(firstNames.size()))
-                         + " "
-                         + surnames .get(rand.nextInt(surnames.size()));
+                        + " "
+                        + surnames.get(rand.nextInt(surnames.size()));
             if (usedNames.add(full)) {
                 namePool.add(full);
             }
@@ -242,18 +246,18 @@ public class Main {
                 // subtract static counts
                 long haveU = doctorList.stream()
                     .filter(m -> m.get("hospital").equals(hospital)
-                              && m.get("department").equals(dept)
-                              && m.get("doctorType").equals("Uzman"))
+                            && m.get("department").equals(dept)
+                            && m.get("doctorType").equals("Uzman"))
                     .count();
                 long haveK = doctorList.stream()
                     .filter(m -> m.get("hospital").equals(hospital)
-                              && m.get("department").equals(dept)
-                              && m.get("doctorType").equals("Kıdemli"))
+                            && m.get("department").equals(dept)
+                            && m.get("doctorType").equals("Kıdemli"))
                     .count();
                 long haveA = doctorList.stream()
                     .filter(m -> m.get("hospital").equals(hospital)
-                              && m.get("department").equals(dept)
-                              && m.get("doctorType").equals("Asistan"))
+                            && m.get("department").equals(dept)
+                            && m.get("doctorType").equals("Asistan"))
                     .count();
 
                 int toGenU = Math.max(0, needU - (int)haveU);
@@ -301,6 +305,87 @@ public class Main {
         }
 
         return doctorList;
+    }
+
+    public static void shiftSettingsSimulator(DBHandler db, Hospital hosp, Month month) {
+        long start = System.nanoTime();
+        Random rand = new Random();
+        Map<String, Map<String, Integer>> shifts = new HashMap<>();
+
+        // 1) per-area hard bounds: { minUzman, maxUzman, minKidemli, maxKidemli, minAsistan, maxAsistan }
+        Map<String, int[]> areaBounds = Map.of(
+            "Genel",       new int[]{ 1, 2,  1, 3,  0, 1 },
+            "Acil",        new int[]{ 0, 0,  0, 1,  2, 3 },
+            "Yoğun Bakım", new int[]{ 0, 0,  0, 1,  2, 3 },
+            "Servis",      new int[]{ 0, 0,  0, 1,  3, 4 }
+        );
+
+        // 2) per-area “extra” probabilities for hitting the max instead of the min
+        //    Order is { Uzman, Kıdemli, Asistan }
+        Map<String, double[]> extraProb = Map.of(
+            "Genel",       new double[]{0.2, 0.3, 0.2},
+            "Acil",        new double[]{0.0, 0.15, 0.5},
+            "Yoğun Bakım", new double[]{0.0, 0.15, 0.5},
+            "Servis",      new double[]{0.0, 0.15, 0.5}
+        );
+
+        // 3) Loop departments × areas
+        int numOfDays = month.getNumOfDays();
+        for (int day = 1 ; day <= numOfDays ; day++) {
+            for (String department : hosp.getDepartments()) {
+                for (Map.Entry<String,int[]> en : areaBounds.entrySet()) {
+                    String area = en.getKey();
+                    int[] b     = en.getValue();
+                    double[] p  = extraProb.get(area);
+
+                    int uz  = randomWithMinMax(b[0], b[1], p[0], rand);
+                    int kid = randomWithMinMax(b[2], b[3], p[1], rand);
+                    int asi = randomWithMinMax(b[4], b[5], p[2], rand);
+
+                    Map<String,Integer> drNumbers = Map.of(
+                        "Uzman",   uz,
+                        "Kıdemli", kid,
+                        "Asistan", asi
+                    );
+
+                    shifts.put(department + "_" + area + "_" + day, drNumbers);
+                }
+            }
+
+        }
+
+        db.addMultipleShiftSettings(month.getMonthName(), hosp.getName(), shifts);
+        long end = System.nanoTime();
+        long durNS = end - start;
+        double durMS = durNS / 1_000_000.0;
+        System.out.println("It took " + durMS + " ms to prepare shift table for " + month.getMonthName() + "_" + hosp.getName());
+    }
+
+    /**
+     * Returns an int in [min..max].
+     * If min==max, returns min.
+     * If (max-min)==1, returns min or max—with probability pExtra for max.
+     * If (max-min)>1, assigns pExtra weight to max, and (1-pExtra)/(range) to each other value.
+     */
+    private static int randomWithMinMax(int min, int max, double pExtra, Random rand) {
+        if (min >= max) return min;
+        int range = max - min;
+        double r = rand.nextDouble();
+        if (range == 1) {
+            return min + (r < pExtra ? 1 : 0);
+        } else {
+            double wMax = pExtra;
+            double wEach = (1.0 - wMax) / range;
+            double cum = 0;
+            for (int i = 0; i <= range; i++) {
+                double w = (i == range ? wMax : wEach);
+                cum += w;
+                if (r < cum) {
+                    return min + i;
+                }
+            }
+            return max; // fallback
+        }
     }
 
 }
