@@ -5,13 +5,15 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Month {
 
-    private final Map<Integer,ArrayList<Shift>> shiftMap = new HashMap<>();
+    private final Map<Integer,DayObject> shiftMap = new HashMap<>();
 
     private final String monthName;
     private final String firstDay;
@@ -35,8 +37,19 @@ public class Month {
 
     @SuppressWarnings("FinalPrivateMethod")
     private final void createShiftMap(int numOfDays){
+        DayObject dayObj;
         for (int i = 0; i < numOfDays; i++) {
-            shiftMap.put(i+1, null);
+            dayObj = new DayObject(i);
+            shiftMap.put(i+1, dayObj);
+        }
+    }
+
+    public void addToShiftMap(int day, Shift shift){
+        switch (shift.getShiftArea()){
+            case "Genel" -> this.shiftMap.get(day).setGenelShift(shift);
+            case "Acil" -> this.shiftMap.get(day).setAcilShift(shift);
+            case "Yoğun Bakım" -> this.shiftMap.get(day).setYogunShift(shift);
+            case "Servis" -> this.shiftMap.get(day).setServisShift(shift);
         }
     }
 
@@ -92,43 +105,46 @@ public class Month {
         };
     }
 
+    public String getDayAsWeekday(int dayNum){
+        int day = ((dayNum + this.getDayAsInt(firstDay) - 1) % 7);
+        return this.getDayAsString(day);
+    }
+
     public void prepareShifts(ArrayList<Doctor> doctors, Hospital hosp){
         this.db.createMonthDB(this, hosp);
-        int currDay = this.getDayAsInt(this.firstDay);
+
+        String[] drTypes = {"Uzman", "Kıdemli", "Asistan"};
+        ArrayList<Shift> shifts = new ArrayList<>();
+
         for (String department : hosp.getDepartments()) {
-            ArrayList<Shift> shifts = new ArrayList<>();
-            for (int i = 1; i < this.shiftMap.size()+1; i++) {
-                ArrayList<Shift> shiftsOfDay = new ArrayList<>();
-                Shift shift = new Shift(hosp, this, i, this.getDayAsString(currDay), "Genel", department);
-                shift.setSize(10);
-                for (Doctor doctor : doctors) {
-                    if (!doctor.getDepartment().equals(department)){
-                        continue;
-                    }
-                    doctor.setShiftPoint(shift);
-                    if (doctor.getShiftPoint() == 0){
-                        doctor.increaseSinceLastShift();
-                        continue;
-                    }
-                    if (shift.isFull()){
-                        if (doctor.getShiftPoint() > shift.getWorstDoctor().getShiftPoint()){
-                            shift.removeWorstDoctor();
-                            shift.addDoctor(doctor);
+            this.shiftMap.entrySet().stream()
+                    .forEach(
+                        day -> {
+                            int date = day.getKey();
+                            DayObject dayObj = day.getValue();
+                            for (Shift currShift : dayObj.getShifts()) {
+                                if (!currShift.getDepartment().equals(department)){continue;}
+                                for (String drType : drTypes) {
+                                    if (currShift.getNeed(drType) == 0){continue;}
+                                    ArrayList<Doctor> currDocs = (ArrayList<Doctor>) doctors.stream()
+                                                                    .filter(dr -> dr.getDoctorType().equals(drType))
+                                                                    .peek(dr -> dr.setShiftPoint(currShift))
+                                                                    .sorted(Comparator.comparingDouble(Doctor::getShiftPoint).reversed())
+                                                                    .limit(currShift.getNeed(drType))
+                                                                    .sorted(Comparator.comparingDouble(Doctor::getShiftPoint))
+                                                                    .collect(Collectors.toList());
+                                    currDocs.stream().forEach(
+                                        dr -> {
+                                                String key = date + "_" + currShift.getShiftArea() + "_" + drType;
+                                                dayObj.addToDoctorMap(key, dr);
+                                                dr.newShift(currShift);
+                                            }
+                                    ); 
+                                }
+                                shifts.add(currShift);
+                            }
                         }
-                    } else {
-                        shift.addDoctor(doctor);
-                        shift.decideWorstDoctor();
-                    }
-                    doctor.increaseSinceLastShift();
-                }
-                for (Doctor doctor : shift.getDoctors()) {
-                    doctor.newShift(shift);
-                }
-                shiftsOfDay.add(shift);
-                this.shiftMap.put(i, shiftsOfDay);
-                shifts.add(shift);
-                currDay = ((currDay) % 7) + 1;
-            }
+                    );
             this.db.addShifts(this, shifts, hosp, department);
         }
     }

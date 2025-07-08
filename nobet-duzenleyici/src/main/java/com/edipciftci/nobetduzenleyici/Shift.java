@@ -1,26 +1,35 @@
 package com.edipciftci.nobetduzenleyici;
 
 import java.util.ArrayList;
-
 public class Shift {
     private ArrayList<Doctor> doctors = new ArrayList<>();
     private Hospital hosp;
     private String department;
     private String shortDep;
     private Month month;
-    private int dayNum, size;
+    private int dayNum;
     private String weekday, shiftArea; // Shift area = {Acil, Yoğun Bakım, Servis}
-    private Doctor worstDoctor;
+    private Doctor[] worstDoctors = new Doctor[3];
+    private int[] needMap = new int[3];
+    private int size;
 
-    public Shift(Hospital hosp, Month month, int dayNum, String weekday, String shiftArea, String department){
+    public Shift(Hospital hosp, Month month, int dayNum, String weekday, String shiftArea, String department, int uzmanNeed, int kidemliNeed, int asistanNeed){
         this.hosp = hosp;
         this.month = month;
         this.dayNum = dayNum;
         this.weekday = weekday;
         this.shiftArea = shiftArea;
-        this.worstDoctor = null;
+        this.worstDoctors[0] = null;
+        this.worstDoctors[1] = null;
+        this.worstDoctors[2] = null;
         this.department = department;
         this.shortDep = hosp.getShortDep(department);
+
+        this.needMap[0] = uzmanNeed;
+        this.needMap[1] = kidemliNeed;
+        this.needMap[2] = asistanNeed;
+
+        this.size = uzmanNeed + kidemliNeed + asistanNeed;
     }
 
     public void setMonth(Month month){
@@ -37,14 +46,6 @@ public class Shift {
     
     public int getDayNum(){
         return this.dayNum;
-    }
-
-    public void setSize(int size){
-        this.size = size;
-    }
-    
-    public int getSize(){
-        return this.size;
     }
 
     public void setWeekday(String weekday){
@@ -64,20 +65,37 @@ public class Shift {
     }
 
     public void setWorstDoctor(Doctor worstDoctor){
-        this.worstDoctor = worstDoctor;
+        switch (worstDoctor.getDoctorType()) {
+            case "Uzman" -> this.worstDoctors[0] = worstDoctor;
+            case "Kıdemli" -> this.worstDoctors[1] = worstDoctor;
+            default -> this.worstDoctors[2] = worstDoctor;
+        }
     }
     
-    public Doctor getWorstDoctor(){
-        return this.worstDoctor;
+    public Doctor getWorstDoctor(String drType){
+        return switch (drType) {
+            case "Uzman" -> this.worstDoctors[0];
+            case "Kıdemli" -> this.worstDoctors[1];
+            default -> this.worstDoctors[2];
+        };
     }
 
-    public void decideWorstDoctor(){
-        if (this.worstDoctor == null){
-            this.worstDoctor = this.doctors.getFirst();
+    public void decideWorstDoctor(String drType){
+        int i;
+        Double currWorstPoint = 999.9;
+        switch (drType) {
+            case "Uzman" -> i = 0;
+            case "Kıdemli" -> i = 1;
+            default -> i = 2;
+        }
+        if (this.worstDoctors[i] == null){
+            this.worstDoctors[i] = this.doctors.getFirst();
         }
         for (Doctor doctor : this.doctors) {
-            if (doctor.getShiftPoint() < this.worstDoctor.getShiftPoint()){
-                this.worstDoctor = doctor;
+            if (!(doctor.getDoctorType().equals(drType))){continue;}
+            if (doctor.getShiftPoint() < currWorstPoint){
+                this.worstDoctors[i] = doctor;
+                currWorstPoint = doctor.getShiftPoint();
             }
         }
     }
@@ -90,8 +108,18 @@ public class Shift {
         return this.hosp;
     }
 
-    public boolean isFull(){
-        return (this.doctors.size() == this.size);
+    public boolean isFull(String drType){
+        int currFullness = 0;
+        for (Doctor doctor : this.doctors) {
+            if (doctor.getDoctorType().equals(drType)){
+                currFullness++;
+            }
+        }
+        return switch (drType) {
+            case "Uzman" -> (this.needMap[0] == currFullness);
+            case "Kıdemli" -> (this.needMap[1] == currFullness);
+            default -> (this.needMap[2] == currFullness);
+        };
     }
 
     public void addDoctor(Doctor doctor){
@@ -102,14 +130,15 @@ public class Shift {
         this.doctors.remove(doctor);
     }
 
-    public void removeWorstDoctor(){
-        this.removeDoctor(this.worstDoctor);
-        this.worstDoctor = this.doctors.getFirst();
-        for (Doctor dr : this.doctors) {
-            if (dr.getShiftPoint() < this.worstDoctor.getShiftPoint()) {
-                this.worstDoctor = dr;
-            }
+    public void removeWorstDoctor(String drType){
+        int i;
+        switch (drType) {
+            case "Uzman" -> i = 0;
+            case "Kıdemli" -> i = 1;
+            default -> i = 2;
         }
+        this.removeDoctor(this.worstDoctors[i]);
+        this.decideWorstDoctor(drType);
     }
 
     public boolean isDoctorInShift(Doctor doctor){
@@ -127,6 +156,19 @@ public class Shift {
 
     public String getShortDep(){
         return this.shortDep;
+    }
+
+    public int getSize(){
+        return this.size;
+    }
+
+    public int getNeed(String drType){
+        return switch (drType){
+            case "Uzman" -> (this.needMap[0]);
+            case "Kıdemli" -> (this.needMap[1]);
+            case "Asistan" -> (this.needMap[2]);
+            default -> throw new IllegalArgumentException("Invalid doctor type: " + drType);
+        };
     }
 
 }

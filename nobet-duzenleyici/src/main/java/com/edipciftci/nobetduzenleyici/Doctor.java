@@ -206,6 +206,7 @@ public class Doctor {
         this.shiftDayMap.put(shift.getWeekday(), this.shiftDayMap.get(shift.getWeekday()) + 1);
 
         this.sinceLastShift = 0;
+        shift.addDoctor(this);
     }
 
     public Double calculateProbability(Shift shift){

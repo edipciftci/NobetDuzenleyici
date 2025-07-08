@@ -125,6 +125,7 @@ public class DBHandler {
 
     public void createMonthDB(Month mnt, Hospital hosp){
         String url = "jdbc:sqlite:" + this.dbPath;
+        int maxSize = 20;
         for (String department : hosp.getDepartments()) {
             try (Connection conn = DriverManager.getConnection(url)){
                 if (conn != null){
@@ -136,7 +137,7 @@ public class DBHandler {
                                 " (Day INTEGER," + 
                                 "DOW TEXT, " +
                                 "Area TEXT ";
-                    for (int i = 1; i < 16; i++) {
+                    for (int i = 1; i < 21; i++) {
                         sql += ",DR" + Integer.toString(i) + " TEXT";
                     }
                     sql += ");";
@@ -186,8 +187,9 @@ public class DBHandler {
     public void addShifts(Month mnt, ArrayList<Shift> shifts, Hospital hosp, String department){
         String url = "jdbc:sqlite:" + this.dbPath;
         int shiftSize = shifts.stream()
-                                .mapToInt(Shift::getSize)
-                                .max().orElse(15);
+            .mapToInt(Shift::getSize)
+            .max()
+            .orElse(20);
 
         String insertSql = "INSERT OR IGNORE INTO " + hosp.getShortName() + hosp.getShortDep(department) + "_" +
                             mnt.getMonthName() +
@@ -411,16 +413,44 @@ public class DBHandler {
         }
     }
 
-    public ArrayList<Shift> getShiftsFromSQL(ArrayList<Hospital> hospitals, Month month){
+    public void getShiftsFromSQL(Hospital hosp, Month month) {
+        String sql = "SELECT Day, Hospital, Department, Area, Uzman, Kıdemli, Asistan FROM Shift_Table WHERE Month = ?";
+        String hospName  = hosp.getName();
 
-        ArrayList<Shift> shifts = new ArrayList<>();
-        Hospital hosp;
-        String url = "jdbc:sqlite:" + this.dbPath;
+        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+            PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        String sqlString = "SELECT Day, Month, Hospital, Department, Area, Uzman, Kıdemli, Asistan FROM Shift_Table";
+            ps.setString(1, month.getMonthName());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    if (!(hospName.equals(rs.getString("Hospital")))){continue;}
 
-        return shifts;
+                    int day          = rs.getInt("Day");
+                    String dept      = rs.getString("Department");
+                    String area      = rs.getString("Area");
+                    int uzmanNeed = rs.getInt("Uzman");
+                    int kidemliNeed = rs.getInt("Kıdemli");
+                    int asistanNeed = rs.getInt("Asistan");
 
+                    Shift shift = new Shift(
+                                            hosp,
+                                            month,
+                                            day,
+                                            month.getDayAsWeekday(day),
+                                            area,
+                                            dept,
+                                            uzmanNeed,
+                                            kidemliNeed,
+                                            asistanNeed
+                                        );
+
+                    month.addToShiftMap(day, shift);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        System.out.println("Got the shifts of " + month.getMonthName() + " for " + hospName);
     }
 
 }

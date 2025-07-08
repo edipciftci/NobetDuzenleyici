@@ -49,18 +49,21 @@ public class Main {
         doctors = db.getDoctorsFromSQL();
 
         for (String hospital : hospitalNames) {
-                Hospital hosp = new Hospital(db, hospital);
-                hosp.setDepartments(departments);
-                hosp.setDoctors((ArrayList<Doctor>) doctors.stream().filter(dr -> dr.getHospital().equals(hospital)).collect(Collectors.toList()));
-                hospitals.add(hosp);
-            }
-
-        for (Hospital hosp : hospitals){
+            Hospital hosp = new Hospital(db, hospital);
+            hosp.setDepartments(departments);
+            hosp.setDoctors((ArrayList<Doctor>) doctors.stream().filter(dr -> dr.getHospital().equals(hospital)).collect(Collectors.toList()));
+            hospitals.add(hosp);
             hosp.newMonth("July");
-            hosp.newMonth("August");
+            // hosp.newMonth("August");
             for (Month month : hosp.getMonths()) {
                 shiftSettingsSimulator(db, hosp, month);
             }
+        }
+
+        for (Hospital hospital : hospitals) {
+            db.getShiftsFromSQL(hospital, hospital.getMonths().getFirst());
+        }
+        for (Hospital hosp : hospitals){
             for (Month mnt : hosp.getMonths()) {
                 long start = System.nanoTime();
                 mnt.prepareShifts(hosp.getDoctors(), hosp);
@@ -70,6 +73,9 @@ public class Main {
                 System.out.println("It took " + durMS + " ms to prepare " + mnt.getMonthName() + " for " + hosp.getName());
             }
         }
+
+        
+        System.out.println("Finished");
 
     }
 
